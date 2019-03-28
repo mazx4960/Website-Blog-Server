@@ -39,7 +39,7 @@ class Users(Resource):
         db = get_db()
 
         parser = reqparse.RequestParser()
-        parser.add_argument("password", required=True)
+        parser.add_argument("username", required=True)
         parser.add_argument("password", required=True)
         args = parser.parse_args()
 

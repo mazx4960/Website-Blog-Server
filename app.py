@@ -15,5 +15,3 @@ def index():
 api.add_resource(Users, "/user")
 api.add_resource(Blogs, "/blog")
 api.add_resource(Comments, "/comment/<int:blog_id>")
-
-#app.run(debug=True)
