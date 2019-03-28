@@ -23,7 +23,7 @@ class Blogs(Resource):
             (args['blog_id'],args['blogger_id'])).fetchall()
 
         if blog_data == []:
-            return "Blog not found", 404
+            return json.dumps([]), 200
 
         blogs = []
         for blog in blog_data:
