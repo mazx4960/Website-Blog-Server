@@ -8,7 +8,7 @@ from comments import Comments
 app = Flask(__name__)
 api = Api(app)
 
-@route('/')
+@app.route('/')
 def index():
     return '<h1>The site is working!</h1>'
 
