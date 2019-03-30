@@ -111,6 +111,101 @@ class Users(Resource):
         return 200
 
 
+########################### Friendships class ###########################
+
+
+class Friendships(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("user_id", required=True)
+        args = parser.parse_args()
+
+        db = get_db()
+        friendships_data = db.execute('SELECT * FROM  Friendships WHERE user_id1=? OR user_id2=?', (args['user_id'],args['user_id'])).fetchall()
+
+        if friendships_data == []:
+            return json.dumps({}), 200
+        else:
+            friends = {}
+            for friend in friendships_data:
+                # you are the sender and status is pending
+                if str(args['user_id']) == str(friend['user_id1']) and friend['status'] == 'pending':
+                    friends[friend['user_id2']] = 'sent'
+                # the other party is the sender
+                elif str(args['user_id']) == str(friend['user_id2']):
+                    friends[friend['user_id1']] = friend['status']
+                # you are the sender
+                else:
+                    friends[friend['user_id2']] = friend['status']
+
+            return json.dumps(friends), 200
+
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("user_id", required=True)
+        parser.add_argument("friend_id", required=True)
+        parser.add_argument("timestamp", required=True)
+        parser.add_argument("status", required=True)
+        args = parser.parse_args()
+
+        db = get_db()
+        # checking if friendship exists
+        friendships_data = db.execute('SELECT * FROM  Friendships \
+        WHERE (user_id1=? AND user_id2=?) OR (user_id1=? AND user_id2=?)',\
+        (args['user_id'],args['friend_id'],args['friend_id'],args['user_id'])).fetchall()
+
+        if friendships_data != []:
+            return "Friendship already exists", 400
+
+        db.execute('INSERT INTO Friendships (user_id1,user_id2,timestamp,status) \
+        VALUES(?,?,?,?)', (args['user_id'],args['friend_id'],args['timestamp'],args['status']) )
+
+        db.commit()
+        return 201
+
+    def put(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("user_id", required=True)
+        parser.add_argument("friend_id", required=True)
+        parser.add_argument("status", required=True)
+        args = parser.parse_args()
+
+        db = get_db()
+        # checking if friendship exists
+        friendships_data = db.execute('SELECT * FROM  Friendships \
+        WHERE (user_id1=? AND user_id2=?) OR (user_id1=? AND user_id2=?)',\
+        (args['user_id'],args['friend_id'],args['friend_id'],args['user_id'])).fetchall()
+
+        if friendships_data == []:
+            return "Friendship not found", 404
+
+        db.execute('UPDATE Friendships SET status=? WHERE (user_id1=? AND user_id2=?) OR (user_id1=? AND user_id2=?)',\
+        (args['status'],args['user_id'],args['friend_id'],args['friend_id'],args['user_id']))
+
+        db.commit()
+        return 201
+
+    def delete(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument("user_id", required=True)
+        parser.add_argument("friend_id", required=True)
+        args = parser.parse_args()
+
+        db = get_db()
+        # checking if friendship exists
+        friendships_data = db.execute('SELECT * FROM  Friendships \
+        WHERE (user_id1=? AND user_id2=?) OR (user_id1=? AND user_id2=?)',\
+        (args['user_id'],args['friend_id'],args['friend_id'],args['user_id'])).fetchall()
+
+        if friendships_data == []:
+            return "Friendship not found", 404
+
+        db.execute('DELETE FROM Friendships WHERE (user_id1=? AND user_id2=?) OR (user_id1=? AND user_id2=?)',\
+        (args['user_id'],args['friend_id'],args['friend_id'],args['user_id']))
+        db.commit()
+        return 200
+
+
 ########################### Blogs Class ###########################
 
 
@@ -220,6 +315,7 @@ def index():
     return '<h1>The site is working!</h1>'
 
 api.add_resource(Users, "/user")
+api.add_resource(Friendships, "/friendship")
 api.add_resource(Blogs, "/blog")
 api.add_resource(Comments, "/comment/<int:blog_id>")
 
